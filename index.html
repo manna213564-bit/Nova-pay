@@ -1,0 +1,2141 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaPay - 3D Smart E-Wallet</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- QR Code Generator Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+        <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Hind Siliguri', 'Inter', sans-serif;
+            background: radial-gradient(circle at top left, #090d16, #02040a);
+            color: #f8fafc;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* 3D Perspective & Glassmorphism */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+
+        .card-3d {
+            background: linear-gradient(145deg, rgba(23, 32, 51, 0.9), rgba(11, 17, 30, 0.96));
+            backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                0 20px 35px -10px rgba(0, 0, 0, 0.75),
+                inset 0 1px 1px rgba(255, 255, 255, 0.18),
+                0 0 20px rgba(56, 189, 248, 0.06);
+            transform-style: preserve-3d;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .wallet-card-3d {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 45%, #311042 100%);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            box-shadow: 
+                0 22px 45px rgba(15, 23, 42, 0.9),
+                inset 0 2px 4px rgba(255, 255, 255, 0.28),
+                inset 0 -4px 12px rgba(0, 0, 0, 0.65);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wallet-card-3d::before {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: -40%;
+            width: 180%;
+            height: 180%;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.14) 0%, transparent 65%);
+            transform: rotate(25deg);
+            pointer-events: none;
+        }
+
+        /* 3D Tactile Push Buttons */
+        .btn-3d {
+            position: relative;
+            transition: all 0.14s ease;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5), 0 8px 16px rgba(0, 0, 0, 0.45);
+        }
+        .btn-3d:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5), 0 3px 6px rgba(0, 0, 0, 0.45);
+        }
+
+        .btn-3d-blue {
+            background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+            box-shadow: 0 4px 0 #1e3a8a, 0 8px 18px rgba(29, 78, 216, 0.38);
+        }
+        .btn-3d-emerald {
+            background: linear-gradient(180deg, #10b981 0%, #047857 100%);
+            box-shadow: 0 4px 0 #064e3b, 0 8px 18px rgba(4, 120, 87, 0.38);
+        }
+        .btn-3d-amber {
+            background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+            box-shadow: 0 4px 0 #78350f, 0 8px 18px rgba(217, 119, 6, 0.38);
+        }
+        .btn-3d-rose {
+            background: linear-gradient(180deg, #f43f5e 0%, #be123c 100%);
+            box-shadow: 0 4px 0 #881337, 0 8px 18px rgba(190, 18, 60, 0.38);
+        }
+
+        /* 3D NovaPay Logo Emblem */
+        .novapay-logo-3d {
+            background: linear-gradient(135deg, #38bdf8 0%, #6366f1 50%, #ec4899 100%);
+            box-shadow: 0 6px 15px rgba(99, 102, 241, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+        }
+
+        /* Continuous Right-to-Left Marquee Slider */
+        @keyframes marqueeRTL {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .marquee-wrapper {
+            display: flex;
+            width: max-content;
+            animation: marqueeRTL 34s linear infinite;
+        }
+        .marquee-wrapper:hover {
+            animation-play-state: paused;
+        }
+
+        /* Floating Animation */
+        @keyframes float3D {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-float-3d {
+            animation: float3D 3.2s ease-in-out infinite;
+        }
+
+        /* Mobile App Container */
+        .app-shell {
+            max-width: 460px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #070b14 0%, #0d1424 100%);
+            box-shadow: 0 0 70px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.07);
+            position: relative;
+        }
+
+        /* QR Scanner Container Styling */
+        #bep20-qr-box img, #bep20-qr-box canvas {
+            margin: 0 auto;
+            border-radius: 10px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 10px; }
+
+        @keyframes slideDownFade {
+            from { opacity: 0; transform: translateY(-12px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .tx-item-new { animation: slideDownFade 0.4s ease-out; }
+    </style>
+</head>
+<body class="antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[120] flex flex-col gap-2 w-[92%] max-w-sm pointer-events-none"></div>
+
+    <!-- ===================================================================== -->
+    <!-- USER INBOX MODAL (AUTOMATIC MESSAGES FOR BALANCE & KYC)                -->
+    <!-- ===================================================================== -->
+    <div id="inbox-modal" class="hidden fixed inset-0 z-[110] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="card-3d rounded-3xl p-5 w-full max-w-sm border-cyan-500/30 space-y-4 max-h-[82vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center">
+                        <i class="fa-solid fa-inbox text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-white">ইনবক্স (Inbox)</h3>
+                        <p class="text-[10px] text-slate-400">ব্যালেন্স ও KYC আপডেট নোটিফিকেশন</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="markAllInboxRead()" class="text-[10px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold">
+                        সব পড়া হয়েছে
+                    </button>
+                    <button onclick="closeInboxModal()" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="inbox-messages-list" class="space-y-2.5 overflow-y-auto pr-1 flex-1"></div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- DISCRETE ADMIN PASSCODE MODAL (TRIGGERED ONLY BY SMALL NOVAPAY LOGO)  -->
+    <!-- ===================================================================== -->
+    <div id="admin-pin-modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="card-3d rounded-3xl p-6 w-full max-w-xs border-indigo-500/40 space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl novapay-logo-3d flex items-center justify-center text-white font-black text-sm">N</div>
+                    <h3 class="text-sm font-bold text-white">NovaPay Control</h3>
+                </div>
+                <button onclick="closeAdminPinModal()" class="text-slate-400 hover:text-white text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="verifyAdminPin(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">অ্যাডমিন পাসওয়ার্ড দিন</label>
+                    <input type="password" id="admin-pin-input" required placeholder="অ্যাডমিন পাসওয়ার্ড লিখুন"
+                        class="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm font-semibold text-white focus:border-indigo-500 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full py-2.5 rounded-xl font-bold text-xs text-white btn-3d btn-3d-blue">
+                    প্রবেশ করুন
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 1. USER MOBILE APPLICATION VIEW (NOVAPAY)                             -->
+    <!-- ===================================================================== -->
+    <div id="user-app-container" class="app-shell flex flex-col justify-between pb-24">
+
+        <!-- AUTHENTICATION SCREEN (LOGIN & REGISTER) -->
+        <div id="auth-screen" class="p-6 flex-1 flex flex-col justify-center">
+            <div class="text-center mb-7">
+                <!-- Secret Admin Trigger on Logo -->
+                <div onclick="openAdminPinModal()" class="w-20 h-20 mx-auto rounded-3xl novapay-logo-3d p-0.5 animate-float-3d mb-4 cursor-pointer flex items-center justify-center">
+                    <div class="w-full h-full bg-slate-950/90 rounded-[22px] flex items-center justify-center">
+                        <span class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-tr from-cyan-400 via-indigo-400 to-pink-400">N</span>
+                    </div>
+                </div>
+                <h1 class="text-3xl font-black tracking-tight text-white">Nova<span class="text-cyan-400">Pay</span></h1>
+                <p class="text-xs text-slate-400 mt-1">স্মার্ট 3D ই-ওয়ালেট ও এজেন্ট পেমেন্ট সিস্টেম</p>
+            </div>
+
+            <!-- Auth Tabs -->
+            <div class="grid grid-cols-2 gap-2 p-1.5 bg-slate-900/90 rounded-2xl border border-slate-800 mb-6">
+                <button onclick="toggleAuthTab('login')" id="tab-login-btn" class="py-2.5 rounded-xl text-sm font-bold bg-indigo-600 text-white shadow-lg transition">লগইন (Login)</button>
+                <button onclick="toggleAuthTab('register')" id="tab-register-btn" class="py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition">রেজিস্টার (Register)</button>
+            </div>
+
+            <!-- LOGIN FORM (REQUIRES REGISTERED NUMBER & PASSWORD) -->
+            <form id="login-form" onsubmit="handleLogin(event)" class="card-3d rounded-3xl p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">মোবাইল নম্বর</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-phone absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="tel" id="login-phone" required placeholder="রেজিস্টার্ড মোবাইল নম্বর"
+                            class="w-full pl-10 pr-4 py-3 bg-slate-950/90 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">পাসওয়ার্ড</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="password" id="login-pass" required placeholder="আপনার পাসওয়ার্ড"
+                            class="w-full pl-10 pr-4 py-3 bg-slate-950/90 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-white btn-3d btn-3d-blue text-sm mt-2">
+                    <i class="fa-solid fa-right-to-bracket mr-1.5"></i> NovaPay-তে প্রবেশ করুন
+                </button>
+                <p class="text-[11px] text-center text-slate-400 pt-1">অ্যাকাউন্ট না থাকলে উপরে <span class="text-emerald-400 font-bold">রেজিস্টার</span> ট্যাবে গিয়ে নতুন অ্যাকাউন্ট খুলুন।</p>
+            </form>
+
+            <!-- REGISTER FORM (NAME, PHONE, PASSWORD, CONFIRM PASSWORD) -->
+            <form id="register-form" onsubmit="handleRegister(event)" class="hidden card-3d rounded-3xl p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">আপনার পূর্ণ নাম</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="text" id="reg-name" required placeholder="যেমন: তানভীর আহমেদ"
+                            class="w-full pl-10 pr-4 py-3 bg-slate-950/90 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">মোবাইল নম্বর (১১ ডিজিট)</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-phone absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="tel" id="reg-phone" required placeholder="01XXXXXXXXX"
+                            class="w-full pl-10 pr-4 py-3 bg-slate-950/90 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">পাসওয়ার্ড</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-key absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="password" id="reg-pass" required placeholder="নতুন পাসওয়ার্ড দিন"
+                            class="w-full pl-10 pr-4 py-3 bg-slate-950/90 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">কনফার্ম পাসওয়ার্ড</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-shield-check absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="password" id="reg-confirm-pass" required placeholder="পাসওয়ার্ডটি পুনরায় লিখুন"
+                            class="w-full pl-10 pr-4 py-3 bg-slate-950/90 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-white btn-3d btn-3d-emerald text-sm">
+                    <i class="fa-solid fa-user-plus mr-1.5"></i> রেজিস্ট্রেশন সম্পন্ন করুন
+                </button>
+            </form>
+        </div>
+
+        <!-- MAIN LOGGED-IN USER DASHBOARD -->
+        <div id="main-app-view" class="hidden flex-1 flex flex-col">
+            
+            <!-- App Header with Discrete Small NovaPay Logo + Online + Small Inbox -->
+            <header class="px-5 pt-4 pb-3 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-30">
+                <div class="flex items-center gap-2.5">
+                    <!-- Discrete Small NovaPay Logo -->
+                    <button onclick="openAdminPinModal()" class="w-9 h-9 rounded-xl novapay-logo-3d flex items-center justify-center text-white font-black text-base shadow-lg">
+                        N
+                    </button>
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-base font-black tracking-tight text-white">Nova<span class="text-cyan-400">Pay</span></span>
+                            <span id="header-kyc-badge" class="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">Unverified</span>
+                        </div>
+                        <p id="header-user-info" class="text-[11px] text-slate-400">User • 01700000000</p>
+                    </div>
+                </div>
+
+                <!-- Online Status + Small Inbox Icon Right Beside Online -->
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online
+                    </span>
+                    <button onclick="openInboxModal()" title="Inbox" class="relative w-8 h-8 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-cyan-300 flex items-center justify-center transition">
+                        <i class="fa-solid fa-inbox text-xs"></i>
+                        <span id="inbox-unread-badge" class="hidden absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-extrabold flex items-center justify-center shadow">0</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- TAB 1: HOME SCREEN -->
+            <section id="tab-home" class="p-4 space-y-5">
+                
+                <!-- 3D Glossy Wallet Balance Card (Starts at 0) -->
+                <div class="perspective-1000">
+                    <div class="wallet-card-3d rounded-3xl p-5 text-white">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <span class="text-xs uppercase tracking-wider text-indigo-200 font-semibold">মূল ব্যালেন্স (Main Balance)</span>
+                                <div class="flex items-baseline gap-1.5 mt-1">
+                                    <span class="text-xl font-bold text-cyan-300">৳</span>
+                                    <h3 id="display-balance" class="text-3xl font-extrabold tracking-tight">0.00</h3>
+                                </div>
+                            </div>
+                            <div class="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center animate-float-3d">
+                                <i class="fa-solid fa-wallet text-cyan-300 text-xl"></i>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Row inside Card: Commission + Active Gateways -->
+                        <div class="grid grid-cols-2 gap-2.5 pt-3 border-t border-white/15">
+                            <div class="bg-black/30 rounded-2xl p-2.5 border border-white/10">
+                                <p class="text-[11px] text-indigo-200">মোট কমিশন</p>
+                                <p class="text-sm font-bold text-emerald-400 mt-0.5">৳ <span id="display-commission">0.00</span></p>
+                            </div>
+                            <div class="bg-black/30 rounded-2xl p-2.5 border border-white/10">
+                                <p class="text-[10px] text-indigo-200">অ্যাক্টিভ গেটওয়ে</p>
+                                <p class="text-sm font-bold text-cyan-300 mt-0.5"><span id="display-active-gateways">0</span> টি</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Up ব্যালেন্স Button Directly Underneath Main Balance Card -->
+                    <button onclick="openTopUpModal()" class="w-full mt-3 py-3 px-4 rounded-2xl btn-3d btn-3d-amber flex items-center justify-center gap-2 font-extrabold text-sm text-white">
+                        <i class="fa-solid fa-plus-circle text-base"></i>
+                        <span>Top Up ব্যালেন্স</span>
+                    </button>
+                </div>
+
+                <!-- Quick Action 3D Buttons -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="openRequestTab('deposit')" class="btn-3d btn-3d-emerald py-3 px-4 rounded-2xl flex items-center justify-center gap-2 font-bold text-sm text-white">
+                        <i class="fa-solid fa-circle-arrow-down text-base"></i> ডিপোজিট রিকোয়েস্ট
+                    </button>
+                    <button onclick="openRequestTab('withdraw')" class="btn-3d btn-3d-blue py-3 px-4 rounded-2xl flex items-center justify-center gap-2 font-bold text-sm text-white">
+                        <i class="fa-solid fa-circle-arrow-up text-base"></i> উইথড্র রিকোয়েস্ট
+                    </button>
+                </div>
+
+                <!-- 20 PLATFORMS SINGLE-LINE AUTO-SLIDER (RIGHT TO LEFT) -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between px-1">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-globe text-cyan-400"></i> অনুমোদিত ২০টি সাইট
+                        </h3>
+                        <span class="text-[10px] text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded-full border border-cyan-500/30">Live Auto-Slide</span>
+                    </div>
+
+                    <div class="relative overflow-hidden py-2 bg-slate-900/70 rounded-2xl border border-slate-800/90 shadow-inner">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 w-7 bg-gradient-to-r from-slate-950 to-transparent z-10"></div>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 w-7 bg-gradient-to-l from-slate-950 to-transparent z-10"></div>
+                        <div id="platforms-marquee-track" class="marquee-wrapper gap-3 px-3"></div>
+                    </div>
+                </div>
+
+                <!-- LIVE MASKED TRANSACTION FEED -->
+                <div class="card-3d rounded-3xl p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                        <div class="flex items-center gap-2">
+                            <span class="relative flex h-2.5 w-2.5">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                            </span>
+                            <h3 class="text-sm font-bold text-white">লাইভ লেনদেন (Live Feed)</h3>
+                        </div>
+                        <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md">প্রতি মিনিটে আপডেট</span>
+                    </div>
+
+                    <div id="live-feed-list" class="space-y-2.5 max-h-72 overflow-y-auto pr-1"></div>
+                </div>
+            </section>
+
+            <!-- TAB 2: TRANSACTION HISTORY ONLY -->
+            <section id="tab-requests" class="hidden p-4 space-y-4">
+                <div class="card-3d rounded-3xl p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i> লেনদেন হিস্ট্রি
+                        </h2>
+                        <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md">স্ট্যাটাস আপডেট</span>
+                    </div>
+                    <div id="user-requests-history" class="space-y-2.5 max-h-[68vh] overflow-y-auto pr-1">
+                        <div class="p-6 text-center rounded-2xl bg-slate-950/60 border border-slate-800 text-xs text-slate-400">আপনার কোন লেনদেন হিস্ট্রি নেই</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: GATEWAY MANAGEMENT -->
+            <section id="tab-gateways" class="hidden p-4 space-y-5">
+                <div class="card-3d rounded-3xl p-5">
+                    <h2 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-building-columns text-cyan-400"></i> পেমেন্ট গেটওয়ে যোগ করুন
+                    </h2>
+                    <p class="text-xs text-slate-400 mb-4">নগদ, বিকাশ, রকেট বা উপায়—যত খুশি তত নম্বর যোগ করুন। যোগ করার সাথে সাথেই Active দেখাবে এবং সেভ থাকবে।</p>
+
+                    <form onsubmit="addUserGateway(event)" class="space-y-3.5">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">গেটওয়ে মাধ্যম</label>
+                                <select id="gw-provider" class="w-full px-3 py-3 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white focus:border-cyan-500 focus:outline-none">
+                                    <option value="bKash">বিকাশ (bKash)</option>
+                                    <option value="Nagad">নগদ (Nagad)</option>
+                                    <option value="Rocket">রকেট (Rocket)</option>
+                                    <option value="Upay">উপায় (Upay)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">অ্যাকাউন্ট ধরন</label>
+                                <select id="gw-type" class="w-full px-3 py-3 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white focus:border-cyan-500 focus:outline-none">
+                                    <option value="Personal">পার্সোনাল (Personal)</option>
+                                    <option value="Agent">এজেন্ট (Agent)</option>
+                                    <option value="Merchant">মার্চেন্ট (Merchant)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">ওয়ালেট নম্বর</label>
+                            <input type="tel" id="gw-number" required placeholder="01XXXXXXXXX"
+                                class="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white focus:border-cyan-500 focus:outline-none">
+                        </div>
+                        <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-white btn-3d btn-3d-blue text-sm">
+                            <i class="fa-solid fa-plus-circle mr-1.5"></i> গেটওয়ে যুক্ত করুন
+                        </button>
+                    </form>
+                </div>
+
+                <!-- List of Added Active Gateways -->
+                <div class="space-y-2.5">
+                    <div class="flex items-center justify-between px-1">
+                        <h3 class="text-sm font-bold text-white">আপনার অ্যাক্টিভ গেটওয়ে সমূহ</h3>
+                        <span id="gw-count-badge" class="text-xs font-bold text-emerald-400 bg-emerald-950/70 px-2.5 py-0.5 rounded-full border border-emerald-500/30">0 Active</span>
+                    </div>
+                    <div id="gateways-list" class="space-y-2.5"></div>
+                </div>
+            </section>
+
+            <!-- TAB 4: COMMISSION DASHBOARD -->
+            <section id="tab-commission" class="hidden p-4 space-y-5">
+                <div class="wallet-card-3d rounded-3xl p-5 text-white">
+                    <span class="text-xs uppercase tracking-wider text-indigo-200">মোট কমিশন ড্যাশবোর্ড</span>
+                    <h2 class="text-3xl font-extrabold text-emerald-400 mt-1">৳ <span id="comm-total-display">0.00</span></h2>
+                    <p class="text-xs text-slate-300 mt-1">বর্তমান কমিশন রেট: <span id="comm-rate-display" class="font-bold text-amber-300">2.5%</span> প্রতিটি সফল লেনদেনে</p>
+                </div>
+
+                <div class="card-3d rounded-3xl p-4 space-y-3">
+                    <h3 class="text-sm font-bold text-white border-b border-slate-800 pb-2">কমিশন হিস্ট্রি</h3>
+                    <div id="commission-history-list" class="space-y-2.5 text-xs">
+                        <p class="text-center text-slate-400 py-4">এখনো কোনো কমিশন জমা হয়নি।</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: SETTINGS (KYC, CHANGE NUMBER, CHANGE PASSWORD, LOGOUT) -->
+            <section id="tab-settings" class="hidden p-4 space-y-4">
+                <div class="card-3d rounded-3xl p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-gear text-indigo-400"></i> অ্যাকাউন্ট সেটিংস
+                        </h2>
+                        <span id="settings-kyc-status" class="text-xs px-2.5 py-1 rounded-full font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">KYC: Unverified</span>
+                    </div>
+
+                    <!-- 1. KYC VERIFICATION -->
+                    <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between cursor-pointer" onclick="toggleSettingsBox('kyc-box')">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                                    <i class="fa-solid fa-id-card"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-white">KYC ভেরিফিকেশন</h3>
+                                    <p class="text-[11px] text-slate-400">এনআইডি কার্ড দিয়ে অ্যাকাউন্ট ভেরিফাই করুন</p>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                        </div>
+
+                        <form id="kyc-box" onsubmit="submitKYC(event)" class="pt-3 border-t border-slate-800 space-y-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">১. এনআইডি কার্ড অনুযায়ী পূর্ণ নাম</label>
+                                <input type="text" id="kyc-nid-name" required placeholder="NID কার্ড অনুযায়ী নাম"
+                                    class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:border-indigo-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">২. এনআইডি (NID) কার্ড নাম্বার</label>
+                                <input type="number" id="kyc-nid-number" required placeholder="NID নম্বর লিখুন"
+                                    class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:border-indigo-500 focus:outline-none">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">৩. এনআইডি সামনের অংশ</label>
+                                    <label class="flex flex-col items-center justify-center h-24 border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl cursor-pointer bg-slate-900/60 overflow-hidden relative">
+                                        <img id="preview-nid-front" class="hidden w-full h-full object-cover" alt="NID Front">
+                                        <div id="placeholder-nid-front" class="text-center p-2">
+                                            <i class="fa-solid fa-camera text-indigo-400 text-lg"></i>
+                                            <p class="text-[10px] text-slate-400 mt-1">সামনের ছবি দিন</p>
+                                        </div>
+                                        <input type="file" accept="image/*" required onchange="previewKYCImage(event, 'front')" class="hidden">
+                                    </label>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">৪. এনআইডি পিছনের অংশ</label>
+                                    <label class="flex flex-col items-center justify-center h-24 border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl cursor-pointer bg-slate-900/60 overflow-hidden relative">
+                                        <img id="preview-nid-back" class="hidden w-full h-full object-cover" alt="NID Back">
+                                        <div id="placeholder-nid-back" class="text-center p-2">
+                                            <i class="fa-solid fa-camera text-indigo-400 text-lg"></i>
+                                            <p class="text-[10px] text-slate-400 mt-1">পিছনের ছবি দিন</p>
+                                        </div>
+                                        <input type="file" accept="image/*" required onchange="previewKYCImage(event, 'back')" class="hidden">
+                                    </label>
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full py-3 rounded-xl font-bold text-white btn-3d btn-3d-emerald text-xs">
+                                <i class="fa-solid fa-paper-plane mr-1"></i> ৫. KYC তথ্য সাবমিট করুন
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- 2. CHANGE NUMBER -->
+                    <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between cursor-pointer" onclick="toggleSettingsBox('number-box')">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                                    <i class="fa-solid fa-mobile-retro"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-white">নম্বর পরিবর্তন (Change Number)</h3>
+                                    <p class="text-[11px] text-slate-400">মোবাইল নম্বর আপডেট করুন</p>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                        </div>
+
+                        <form id="number-box" onsubmit="handleChangeNumber(event)" class="hidden pt-3 border-t border-slate-800 space-y-3">
+                            <input type="tel" id="new-phone-input" required placeholder="নতুন মোবাইল নম্বর লিখুন"
+                                class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:border-cyan-500 focus:outline-none">
+                            <button type="submit" class="w-full py-2.5 rounded-xl font-bold text-white btn-3d btn-3d-blue text-xs">
+                                নম্বর আপডেট করুন
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- 3. CHANGE PASSWORD -->
+                    <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between cursor-pointer" onclick="toggleSettingsBox('password-box')">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-white">পাসওয়ার্ড পরিবর্তন (Change Password)</h3>
+                                    <p class="text-[11px] text-slate-400">নতুন পাসওয়ার্ড সেট করুন</p>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                        </div>
+
+                        <form id="password-box" onsubmit="handleChangePassword(event)" class="hidden pt-3 border-t border-slate-800 space-y-3">
+                            <input type="password" id="old-pass-input" required placeholder="বর্তমান পাসওয়ার্ড"
+                                class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:border-amber-500 focus:outline-none">
+                            <input type="password" id="new-pass-input" required placeholder="নতুন পাসওয়ার্ড"
+                                class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:border-amber-500 focus:outline-none">
+                            <button type="submit" class="w-full py-2.5 rounded-xl font-bold text-white btn-3d btn-3d-blue text-xs">
+                                পাসওয়ার্ড পরিবর্তন করুন
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- 4. LOGOUT BUTTON -->
+                    <button onclick="handleLogout()" class="w-full py-3.5 rounded-2xl font-bold text-white btn-3d btn-3d-rose text-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-right-from-bracket"></i> লগ আউট (Logout)
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- BOTTOM NAVIGATION BAR -->
+        <nav id="bottom-nav" class="hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[460px] bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 px-2 py-2 z-40">
+            <div class="grid grid-cols-5 gap-1 text-center">
+                <button onclick="switchUserTab('home')" id="nav-home" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-indigo-400 bg-indigo-500/15 transition">
+                    <i class="fa-solid fa-house text-base mb-0.5"></i>
+                    <span class="text-[10px] font-bold">Home</span>
+                </button>
+                <button onclick="switchUserTab('requests')" id="nav-requests" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-money-bill-transfer text-base mb-0.5"></i>
+                    <span class="text-[10px] font-bold">রিকোয়েস্ট</span>
+                </button>
+                <button onclick="switchUserTab('gateways')" id="nav-gateways" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-wallet text-base mb-0.5"></i>
+                    <span class="text-[10px] font-bold">গেটওয়ে</span>
+                </button>
+                <button onclick="switchUserTab('commission')" id="nav-commission" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-chart-pie text-base mb-0.5"></i>
+                    <span class="text-[10px] font-bold">কমিশন</span>
+                </button>
+                <button onclick="switchUserTab('settings')" id="nav-settings" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-gear text-base mb-0.5"></i>
+                    <span class="text-[10px] font-bold">সেটিং</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TOP UP BALANCE MODAL (BINANCE USDT BEP20 + BKASH / NAGAD / ROCKET / UPAY) -->
+    <!-- ===================================================================== -->
+    <div id="topup-modal" class="hidden fixed inset-0 z-[90] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="card-3d rounded-3xl w-full max-w-md p-5 border-amber-500/30 space-y-4 my-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                        <i class="fa-solid fa-coins"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white">Top Up ব্যালেন্স</h3>
+                </div>
+                <button onclick="closeTopUpModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Two Top-Up Method Tabs -->
+            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-2xl border border-slate-800">
+                <button onclick="switchTopUpTab('binance')" id="topup-tab-binance" class="py-2.5 px-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 shadow transition flex items-center justify-center gap-1.5">
+                    <i class="fa-brands fa-bitcoin"></i> Binance ডিপোজিট
+                </button>
+                <button onclick="switchTopUpTab('mobile')" id="topup-tab-mobile" class="py-2.5 px-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-mobile-screen"></i> বিকাশ/নগদ/রকেট/উপায়
+                </button>
+            </div>
+
+            <!-- OPTION 1: BINANCE BSC BEP20 USDT DEPOSIT -->
+            <div id="topup-panel-binance" class="space-y-4">
+                <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-[11px] text-slate-400">Network</p>
+                            <p class="text-sm font-extrabold text-white">BSC <span class="text-xs font-normal text-slate-300">BNB Smart Chain (BEP20)</span></p>
+                        </div>
+                        <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">USDT BEP20</span>
+                    </div>
+
+                    <!-- QR Code Scanner Container with USDT Center Emblem -->
+                    <div class="bg-white p-3.5 rounded-2xl w-44 h-44 mx-auto relative flex items-center justify-center shadow-xl">
+                        <div id="bep20-qr-box" class="w-full h-full flex items-center justify-center"></div>
+                        <div class="absolute w-9 h-9 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-white font-black text-sm shadow">
+                            ₮
+                        </div>
+                    </div>
+
+                    <!-- BEP20 Wallet Address + Copy -->
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                        <p class="text-[10px] text-slate-400 mb-1">Deposit Address (BEP20)</p>
+                        <div class="flex items-center justify-between gap-2">
+                            <code id="user-view-bep20-addr" class="text-[11px] text-cyan-300 font-mono break-all select-all">0x9911a69e98125f4ae4d2f16e70d53a92a1524b11</code>
+                            <button type="button" onclick="copyTextValue('user-view-bep20-addr')" class="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold shrink-0">
+                                <i class="fa-regular fa-copy"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <form onsubmit="submitTopUpRequest(event, 'Binance (BEP20)')" class="space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">পরিমাণ (USDT) • Min 50</label>
+                            <input type="number" id="topup-bin-amount" required min="50" step="any" placeholder="50"
+                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white focus:border-amber-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">TxID / Hash</label>
+                            <input type="text" id="topup-bin-trx" required placeholder="TxID দিন"
+                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white focus:border-amber-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-3 rounded-xl font-bold text-slate-950 btn-3d btn-3d-amber text-xs">
+                        <i class="fa-solid fa-paper-plane mr-1"></i> Binance USDT Top-Up রিকোয়েস্ট পাঠান
+                    </button>
+                </form>
+            </div>
+
+            <!-- OPTION 2: BKASH / NAGAD / ROCKET / UPAY PERSONAL DEPOSIT -->
+            <div id="topup-panel-mobile" class="hidden space-y-4">
+                <div class="space-y-2">
+                    <!-- bKash Card -->
+                    <div class="p-3 rounded-2xl bg-slate-900/90 border border-pink-500/30 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="px-2 py-1 rounded-lg bg-pink-600 text-white font-bold text-xs">বিকাশ</span>
+                            <div>
+                                <p class="text-[10px] text-slate-400">পার্সোনাল নম্বর (Send Money)</p>
+                                <p id="user-view-bkash-num" class="text-sm font-mono font-bold text-white">01356408019</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="copyTextValue('user-view-bkash-num')" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-bold">
+                            <i class="fa-regular fa-copy mr-1"></i> Copy
+                        </button>
+                    </div>
+
+                    <!-- Nagad Card -->
+                    <div class="p-3 rounded-2xl bg-slate-900/90 border border-orange-500/30 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="px-2 py-1 rounded-lg bg-orange-600 text-white font-bold text-xs">নগদ</span>
+                            <div>
+                                <p class="text-[10px] text-slate-400">পার্সোনাল নম্বর (Send Money)</p>
+                                <p id="user-view-nagad-num" class="text-sm font-mono font-bold text-white">01850616693</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="copyTextValue('user-view-nagad-num')" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-bold">
+                            <i class="fa-regular fa-copy mr-1"></i> Copy
+                        </button>
+                    </div>
+
+                    <!-- Rocket Card -->
+                    <div class="p-3 rounded-2xl bg-slate-900/90 border border-purple-500/30 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="px-2 py-1 rounded-lg bg-purple-600 text-white font-bold text-xs">রকেট</span>
+                            <div>
+                                <p class="text-[10px] text-slate-400">পার্সোনাল নম্বর (Send Money)</p>
+                                <p id="user-view-rocket-num" class="text-sm font-mono font-bold text-white">01590049531</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="copyTextValue('user-view-rocket-num')" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-bold">
+                            <i class="fa-regular fa-copy mr-1"></i> Copy
+                        </button>
+                    </div>
+
+                    <!-- Upay Card -->
+                    <div class="p-3 rounded-2xl bg-slate-900/90 border border-amber-500/30 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="px-2 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs">উপায়</span>
+                            <div>
+                                <p class="text-[10px] text-slate-400">পার্সোনাল নম্বর (Send Money)</p>
+                                <p id="user-view-upay-num" class="text-sm font-mono font-bold text-white">01590049531</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="copyTextValue('user-view-upay-num')" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-bold">
+                            <i class="fa-regular fa-copy mr-1"></i> Copy
+                        </button>
+                    </div>
+                </div>
+
+                <form onsubmit="submitTopUpRequest(event, 'Mobile Banking')" class="space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">মাধ্যম নির্বাচন</label>
+                            <select id="topup-mob-method" class="w-full px-3 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white focus:border-emerald-500 focus:outline-none">
+                                <option value="bKash Personal">বিকাশ (bKash)</option>
+                                <option value="Nagad Personal">নগদ (Nagad)</option>
+                                <option value="Rocket Personal">রকেট (Rocket)</option>
+                                <option value="Upay Personal">উপায় (Upay)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">টাকার পরিমাণ (৳)</label>
+                            <input type="number" id="topup-mob-amount" required min="100" placeholder="2000"
+                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white focus:border-emerald-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">সেন্ডার নম্বর</label>
+                            <input type="tel" id="topup-mob-sender" required placeholder="01XXXXXXXXX"
+                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white focus:border-emerald-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">TrxID</label>
+                            <input type="text" id="topup-mob-trx" required placeholder="8N7M6K5J"
+                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white focus:border-emerald-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-3 rounded-xl font-bold text-white btn-3d btn-3d-emerald text-xs">
+                        <i class="fa-solid fa-paper-plane mr-1"></i> Top-Up রিকোয়েস্ট সাবমিট করুন
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 2. SEPARATE MASTER ADMIN CONTROL PANEL                                -->
+    <!-- ===================================================================== -->
+    <div id="admin-panel-container" class="hidden min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+        <div class="max-w-6xl mx-auto space-y-6">
+            
+            <!-- Admin Header with Small NovaPay Logo -->
+            <div class="card-3d rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-indigo-500/30">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-11 h-11 rounded-2xl novapay-logo-3d flex items-center justify-center text-white text-xl font-black shadow-lg">
+                        N
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-lg md:text-xl font-extrabold text-white">NovaPay মাস্টার অ্যাডমিন প্যানেল</h1>
+                            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Admin Control</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">সব ইউজার, Top-Up রিকোয়েস্ট, ডিপোজিট/উইথড্র এবং পেমেন্ট নম্বর এখান থেকে নিয়ন্ত্রণ করুন</p>
+                    </div>
+                </div>
+                <button onclick="exitAdminPanel()" class="btn-3d btn-3d-blue px-4 py-2.5 rounded-xl text-xs font-bold text-white self-start sm:self-auto">
+                    <i class="fa-solid fa-arrow-left mr-1.5"></i> ইউজার অ্যাপে ফিরে যান
+                </button>
+            </div>
+
+            <!-- Admin Top Stats -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="card-3d rounded-2xl p-4">
+                    <p class="text-xs text-slate-400">মোট রেজিস্টার্ড ইউজার</p>
+                    <p class="text-2xl font-extrabold text-cyan-400 mt-1"><span id="admin-total-users">0</span> জন</p>
+                </div>
+                <div class="card-3d rounded-2xl p-4">
+                    <p class="text-xs text-slate-400">পেন্ডিং রিকোয়েস্ট</p>
+                    <p class="text-2xl font-extrabold text-amber-400 mt-1"><span id="admin-pending-reqs">0</span> টি</p>
+                </div>
+                <div class="card-3d rounded-2xl p-4">
+                    <p class="text-xs text-slate-400">মোট অনুমোদিত লেনদেন</p>
+                    <p class="text-2xl font-extrabold text-emerald-400 mt-1"><span id="admin-approved-reqs">0</span> টি</p>
+                </div>
+                <div class="card-3d rounded-2xl p-4">
+                    <p class="text-xs text-slate-400">পেন্ডিং KYC</p>
+                    <p class="text-2xl font-extrabold text-indigo-400 mt-1"><span id="admin-pending-kyc">0</span> টি</p>
+                </div>
+            </div>
+
+            <!-- Admin Main Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Left 2 Columns: Requests Queue + Registered Users Management + KYC -->
+                <div class="lg:col-span-2 space-y-6">
+                    
+                    <!-- 1. Top-Up & Deposit/Withdraw Requests Approval -->
+                    <div class="card-3d rounded-3xl p-5 space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <h2 class="text-base font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-bell-concierge text-amber-400"></i> Top-Up ও ডিপোজিট/উইথড্র রিকোয়েস্ট
+                            </h2>
+                            <span class="text-xs text-slate-400">Approve / Reject ম্যানুয়াল কন্ট্রোল</span>
+                        </div>
+                        <div id="admin-requests-list" class="space-y-3 max-h-96 overflow-y-auto pr-1"></div>
+                    </div>
+
+                    <!-- 2. Registered Users List (Ban / Unban & Balance Control) -->
+                    <div class="card-3d rounded-3xl p-5 space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <h2 class="text-base font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-users-gear text-cyan-400"></i> ইউজার ম্যানেজমেন্ট (ব্যালেন্স আপডেট ও ব্যান)
+                            </h2>
+                        </div>
+                        <div id="admin-users-list" class="space-y-3 max-h-96 overflow-y-auto pr-1"></div>
+                    </div>
+
+                    <!-- 3. KYC Submissions Review -->
+                    <div class="card-3d rounded-3xl p-5 space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <h2 class="text-base font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-id-card-clip text-indigo-400"></i> ইউজার KYC ভেরিফিকেশন তালিকা
+                            </h2>
+                        </div>
+                        <div id="admin-kyc-list" class="space-y-4"></div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Admin Payment Numbers & Binance BEP20 Settings -->
+                <div class="space-y-6">
+                    <div class="card-3d rounded-3xl p-5 space-y-4 border-amber-500/30">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                            <i class="fa-solid fa-sliders text-amber-400"></i> Top-Up পেমেন্ট নম্বর ও Binance এড্রেস আপডেট
+                        </h3>
+                        <form onsubmit="adminSavePaymentSettings(event)" class="space-y-3.5">
+                            <div>
+                                <label class="block text-xs font-semibold text-pink-400 mb-1">বিকাশ (bKash Personal)</label>
+                                <input type="text" id="admin-cfg-bkash" required
+                                    class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-mono text-white focus:border-pink-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-orange-400 mb-1">নগদ (Nagad Personal)</label>
+                                <input type="text" id="admin-cfg-nagad" required
+                                    class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-mono text-white focus:border-orange-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-purple-400 mb-1">রকেট (Rocket Personal)</label>
+                                <input type="text" id="admin-cfg-rocket" required
+                                    class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-mono text-white focus:border-purple-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-amber-400 mb-1">উপায় (Upay Personal)</label>
+                                <input type="text" id="admin-cfg-upay" required
+                                    class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-mono text-white focus:border-amber-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-cyan-400 mb-1">Binance BSC (BEP20) Wallet Address</label>
+                                <textarea id="admin-cfg-bep20" rows="2" required
+                                    class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono text-cyan-300 focus:border-cyan-500 focus:outline-none"></textarea>
+                            </div>
+                            <button type="submit" class="w-full py-3 rounded-xl font-bold text-white btn-3d btn-3d-emerald text-xs">
+                                <i class="fa-solid fa-floppy-disk mr-1"></i> পরিবর্তন সেভ ও আপডেট করুন
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Admin PIN Change -->
+                    <div class="card-3d rounded-3xl p-5 space-y-3">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-lock text-rose-400"></i> অ্যাডমিন পাসওয়ার্ড পরিবর্তন
+                        </h3>
+                        <form onsubmit="adminUpdatePin(event)" class="flex gap-2">
+                            <input type="text" id="admin-new-pin" required placeholder="নতুন অ্যাডমিন পাসওয়ার্ড"
+                                class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none">
+                            <button type="submit" class="btn-3d btn-3d-blue px-4 py-2 rounded-xl text-xs font-bold text-white">সেভ</button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- JAVASCRIPT LOGIC & PERSISTENT LOCALSTORAGE DATABASE                   -->
+    <!-- ===================================================================== -->
+    <script>
+        const STORAGE_KEY = "novapay_3d_system_v2";
+        const DEFAULT_ADMIN_PASSWORD = "Mraj24h@#$@#$";
+        const FIREBASE_DB_PATH = "novapay_3d_system_v2";
+
+        // এখানে আপনার Firebase প্রজেক্টের আসল কনফিগারেশন বসান:
+        // https://console.firebase.google.com -> Project Settings -> Your apps (Web app)
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyBjovnkGtXcP3TSyK86fYWgtRi9xKiGNgM",
+            authDomain: "nova3d-c042e.firebaseapp.com",
+            databaseURL: "https://nova3d-c042e-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "nova3d-c042e",
+            storageBucket: "nova3d-c042e.firebasestorage.app",
+            messagingSenderId: "210523027158",
+            appId: "1:210523027158:web:6bf0426529a7a0661f7b77",
+            measurementId: "G-CF21MTZFY0"
+        };
+
+        let fbDb = null;
+        let isFirebaseConfigured = false;
+        let isApplyingRemoteSync = false;
+
+        function initFirebaseSync() {
+            try {
+                const hasValidConfig =
+                    FIREBASE_CONFIG &&
+                    FIREBASE_CONFIG.databaseURL &&
+                    !FIREBASE_CONFIG.databaseURL.includes("YOUR_PROJECT_ID") &&
+                    !FIREBASE_CONFIG.apiKey.includes("YOUR_FIREBASE_API_KEY");
+
+                if (!hasValidConfig || typeof firebase === "undefined") {
+                    isFirebaseConfigured = false;
+                    return;
+                }
+
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(FIREBASE_CONFIG);
+                }
+
+                fbDb = firebase.database().ref(FIREBASE_DB_PATH);
+                isFirebaseConfigured = true;
+
+                // প্রথমবার ক্লাউডে ডেটা না থাকলে লোকাল ডেটা পুশ করুন
+                fbDb.once("value").then((snapshot) => {
+                    const cloudVal = snapshot.val();
+                    if (!cloudVal) {
+                        pushToFirebase(db);
+                    }
+                }).catch((err) => {
+                    console.warn("Firebase initial read fallback:", err);
+                });
+
+                // রিয়েল-টাইম ক্লাউড লিসেনার (অন্য ডিভাইস বা অ্যাডমিন আপডেট সাথে সাথে সিঙ্ক হবে)
+                fbDb.on("value", (snapshot) => {
+                    const remoteData = snapshot.val();
+                    if (!remoteData) return;
+
+                    const normalized = normalizeDBData(remoteData);
+                    // ডিভাইস-নির্দিষ্ট সেশন (currentUserPhone) ঠিক রেখে শেয়ার্ড ডেটা সিঙ্ক করুন
+                    const localSessionPhone = db.currentUserPhone || localStorage.getItem(STORAGE_KEY + "_session_phone") || null;
+
+                    isApplyingRemoteSync = true;
+                    db = {
+                        ...normalized,
+                        currentUserPhone: localSessionPhone
+                    };
+                    try {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+                    } catch (e) {}
+                    isApplyingRemoteSync = false;
+
+                    const adminVisible = !document.getElementById("admin-panel-container").classList.contains("hidden");
+                    if (adminVisible) {
+                        renderAdminPanel();
+                    } else {
+                        checkSessionAndRender();
+                    }
+                });
+            } catch (err) {
+                console.warn("Firebase init error:", err);
+                isFirebaseConfigured = false;
+            }
+        }
+
+        function normalizeDBData(raw) {
+            const parsed = raw || {};
+            const usersArr = Array.isArray(parsed.users)
+                ? parsed.users
+                : (parsed.users && typeof parsed.users === "object" ? Object.values(parsed.users) : []);
+            const requestsArr = Array.isArray(parsed.requests)
+                ? parsed.requests
+                : (parsed.requests && typeof parsed.requests === "object" ? Object.values(parsed.requests) : []);
+
+            const cleanedUsers = usersArr.filter(Boolean).map(u => ({
+                ...u,
+                balance: Number(u.balance) || 0,
+                commission: Number(u.commission) || 0,
+                commissionRate: Number(u.commissionRate) || 2.5,
+                gateways: Array.isArray(u.gateways)
+                    ? u.gateways
+                    : (u.gateways && typeof u.gateways === "object" ? Object.values(u.gateways) : []),
+                inbox: Array.isArray(u.inbox)
+                    ? u.inbox
+                    : (u.inbox && typeof u.inbox === "object" ? Object.values(u.inbox) : []),
+                kycStatus: u.kycStatus || "Unverified",
+                kycData: u.kycData || null,
+                banned: Boolean(u.banned)
+            }));
+
+            const cleanedRequests = requestsArr.filter(Boolean).map(r => ({
+                ...r,
+                amount: Number(r.amount) || 0,
+                unit: r.unit || "৳",
+                status: r.status || "Pending"
+            })).sort((a, b) => (b.id || 0) - (a.id || 0));
+
+            return {
+                adminPin: parsed.adminPin || DEFAULT_ADMIN_PASSWORD,
+                currentUserPhone: parsed.currentUserPhone || null,
+                paymentSettings: {
+                    ...defaultDB.paymentSettings,
+                    ...(parsed.paymentSettings || {})
+                },
+                users: cleanedUsers,
+                requests: cleanedRequests
+            };
+        }
+
+        function pushToFirebase(currentDb) {
+            if (!isFirebaseConfigured || !fbDb || isApplyingRemoteSync) return;
+            try {
+                const payload = {
+                    adminPin: currentDb.adminPin || DEFAULT_ADMIN_PASSWORD,
+                    paymentSettings: currentDb.paymentSettings || defaultDB.paymentSettings,
+                    users: Array.isArray(currentDb.users) ? currentDb.users : [],
+                    requests: Array.isArray(currentDb.requests) ? currentDb.requests : [],
+                    updatedAt: Date.now()
+                };
+                fbDb.set(payload).catch((err) => {
+                    console.warn("Firebase write error:", err);
+                });
+            } catch (e) {
+                console.warn("Firebase push error:", e);
+            }
+        }
+
+        const PLATFORMS_20 = [
+            { name: "MCW", color: "from-amber-500 to-orange-600", icon: "fa-crown" },
+            { name: "Bangla Bet", color: "from-emerald-500 to-teal-700", icon: "fa-trophy" },
+            { name: "Khelo Ghor", color: "from-blue-500 to-indigo-700", icon: "fa-gamepad" },
+            { name: "Mega Casino", color: "from-purple-500 to-pink-600", icon: "fa-gem" },
+            { name: "CrikBD", color: "from-cyan-500 to-blue-600", icon: "fa-baseball-bat-ball" },
+            { name: "JeetBuzz", color: "from-yellow-500 to-amber-600", icon: "fa-bolt" },
+            { name: "Baji Live", color: "from-green-500 to-emerald-700", icon: "fa-fire" },
+            { name: "Six6s", color: "from-rose-500 to-red-700", icon: "fa-6" },
+            { name: "MarvelBet", color: "from-red-600 to-rose-800", icon: "fa-shield" },
+            { name: "Krikya", color: "from-orange-500 to-red-600", icon: "fa-star" },
+            { name: "Nagad88", color: "from-amber-600 to-red-600", icon: "fa-coins" },
+            { name: "Babu88", color: "from-sky-500 to-indigo-600", icon: "fa-dice" },
+            { name: "Crickex", color: "from-lime-500 to-green-700", icon: "fa-trophy" },
+            { name: "DarazPlay", color: "from-orange-500 to-amber-700", icon: "fa-play" },
+            { name: "Jaya9", color: "from-fuchsia-500 to-purple-700", icon: "fa-diamond" },
+            { name: "MostPlay", color: "from-teal-500 to-cyan-700", icon: "fa-rocket" },
+            { name: "BetVisa", color: "from-yellow-400 to-orange-600", icon: "fa-credit-card" },
+            { name: "Glory Casino", color: "from-violet-500 to-indigo-800", icon: "fa-chess-queen" },
+            { name: "1xBet", color: "from-blue-600 to-cyan-600", icon: "fa-1" },
+            { name: "Melbet", color: "from-amber-400 to-yellow-600", icon: "fa-medal" }
+        ];
+
+        const defaultDB = {
+            adminPin: DEFAULT_ADMIN_PASSWORD,
+            currentUserPhone: null,
+            paymentSettings: {
+                bkash: "01356408019",
+                nagad: "01850616693",
+                rocket: "01590049531",
+                upay: "01590049531",
+                bep20Address: "0x9911a69e98125f4ae4d2f16e70d53a92a1524b11"
+            },
+            users: [],
+            requests: []
+        };
+
+        let db = loadDB();
+        let liveDemoFeed = [];
+
+        function loadDB() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    const normalized = normalizeDBData(parsed);
+                    const sessionPhone = parsed.currentUserPhone || localStorage.getItem(STORAGE_KEY + "_session_phone") || null;
+                    return {
+                        ...normalized,
+                        currentUserPhone: sessionPhone
+                    };
+                }
+            } catch (e) {
+                console.error("Storage load error", e);
+            }
+            return JSON.parse(JSON.stringify(defaultDB));
+        }
+
+        function saveDB() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+                if (db.currentUserPhone) {
+                    localStorage.setItem(STORAGE_KEY + "_session_phone", db.currentUserPhone);
+                } else {
+                    localStorage.removeItem(STORAGE_KEY + "_session_phone");
+                }
+            } catch (e) {
+                console.error("Storage save error", e);
+            }
+            pushToFirebase(db);
+        }
+
+        function getCurrentUser() {
+            if (!db.currentUserPhone) return null;
+            return db.users.find(u => u.phone === db.currentUserPhone) || null;
+        }
+
+        function formatAmountPlain(num) {
+            const n = Number(num) || 0;
+            return Number.isInteger(n) ? n.toLocaleString("en-US") : n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function sendInboxMessage(user, title, body, category = "balance") {
+            if (!user) return;
+            if (!Array.isArray(user.inbox)) user.inbox = [];
+            user.inbox.unshift({
+                id: Date.now() + Math.floor(Math.random() * 1000),
+                title,
+                body,
+                category,
+                unread: true,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+        }
+
+        function openInboxModal() {
+            const user = getCurrentUser();
+            if (!user) return;
+            renderInboxModal(user);
+            document.getElementById("inbox-modal").classList.remove("hidden");
+        }
+
+        function closeInboxModal() {
+            document.getElementById("inbox-modal").classList.add("hidden");
+        }
+
+        function markInboxItemRead(msgId) {
+            const user = getCurrentUser();
+            if (!user || !Array.isArray(user.inbox)) return;
+            const item = user.inbox.find(m => m.id === msgId);
+            if (item) {
+                item.unread = false;
+                saveDB();
+                renderInboxModal(user);
+                syncUserUI();
+            }
+        }
+
+        function markAllInboxRead() {
+            const user = getCurrentUser();
+            if (!user || !Array.isArray(user.inbox)) return;
+            user.inbox.forEach(m => m.unread = false);
+            saveDB();
+            renderInboxModal(user);
+            syncUserUI();
+        }
+
+        function renderInboxModal(user) {
+            const listEl = document.getElementById("inbox-messages-list");
+            const messages = Array.isArray(user.inbox) ? user.inbox : [];
+
+            if (messages.length === 0) {
+                listEl.innerHTML = `
+                    <div class="p-6 text-center rounded-2xl bg-slate-950/70 border border-slate-800 text-xs text-slate-400">
+                        আপনার ইনবক্সে কোনো মেসেজ নেই।
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = messages.map(msg => {
+                const isKyc = msg.category === "kyc";
+                return `
+                    <div onclick="markInboxItemRead(${msg.id})" class="cursor-pointer p-3.5 rounded-2xl border transition ${msg.unread ? 'bg-indigo-950/45 border-cyan-500/40' : 'bg-slate-950/75 border-slate-800'}">
+                        <div class="flex items-start justify-between gap-2 mb-1">
+                            <div class="flex items-center gap-1.5">
+                                <i class="fa-solid ${isKyc ? 'fa-id-badge text-emerald-400' : 'fa-coins text-amber-400'} text-xs"></i>
+                                <span class="text-xs font-bold text-white">${msg.title}</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                ${msg.unread ? '<span class="w-2 h-2 rounded-full bg-rose-500"></span>' : ''}
+                                <span class="text-[10px] text-slate-400">${msg.time || ''}</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-200 leading-relaxed">${msg.body}</p>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function showToast(message, type = "info") {
+            const container = document.getElementById("toast-container");
+            const toast = document.createElement("div");
+            const styles = {
+                success: "bg-emerald-950/95 border-emerald-500 text-emerald-200",
+                error: "bg-rose-950/95 border-rose-500 text-rose-200",
+                info: "bg-indigo-950/95 border-indigo-500 text-indigo-200"
+            };
+            const icons = {
+                success: "fa-circle-check text-emerald-400",
+                error: "fa-circle-exclamation text-rose-400",
+                info: "fa-circle-info text-indigo-400"
+            };
+            toast.className = `px-4 py-3 rounded-2xl border backdrop-blur-md shadow-2xl flex items-center gap-2.5 text-xs font-semibold transition-all duration-300 ${styles[type]}`;
+            toast.innerHTML = `<i class="fa-solid ${icons[type]} text-base"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = "0";
+                toast.style.transform = "translateY(-10px)";
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+
+        function copyTextValue(elementId) {
+            const text = document.getElementById(elementId).textContent.trim();
+            const tempInput = document.createElement("textarea");
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            showToast("কপি করা হয়েছে: " + text, "success");
+        }
+
+        // =====================================================================
+        // DISCRETE ADMIN MODAL & NAVIGATION
+        // =====================================================================
+        function openAdminPinModal() {
+            document.getElementById("admin-pin-input").value = "";
+            document.getElementById("admin-pin-modal").classList.remove("hidden");
+        }
+
+        function closeAdminPinModal() {
+            document.getElementById("admin-pin-modal").classList.add("hidden");
+        }
+
+        function verifyAdminPin(e) {
+            e.preventDefault();
+            const pin = document.getElementById("admin-pin-input").value;
+            const activeAdminPassword = db.adminPin || DEFAULT_ADMIN_PASSWORD;
+            if (pin === activeAdminPassword || pin === DEFAULT_ADMIN_PASSWORD) {
+                if (pin === DEFAULT_ADMIN_PASSWORD && db.adminPin !== DEFAULT_ADMIN_PASSWORD) {
+                    db.adminPin = DEFAULT_ADMIN_PASSWORD;
+                    saveDB();
+                }
+                closeAdminPinModal();
+                document.getElementById("user-app-container").classList.add("hidden");
+                document.getElementById("admin-panel-container").classList.remove("hidden");
+                renderAdminPanel();
+                showToast("NovaPay অ্যাডমিন প্যানেলে স্বাগতম!", "success");
+            } else {
+                showToast("ভুল অ্যাডমিন পাসওয়ার্ড!", "error");
+            }
+        }
+
+        function exitAdminPanel() {
+            document.getElementById("admin-panel-container").classList.add("hidden");
+            document.getElementById("user-app-container").classList.remove("hidden");
+            checkSessionAndRender();
+        }
+
+        // =====================================================================
+        // AUTHENTICATION (STRICT LOGIN + CONFIRM PASSWORD REGISTRATION)
+        // =====================================================================
+        function toggleAuthTab(tab) {
+            const loginForm = document.getElementById("login-form");
+            const regForm = document.getElementById("register-form");
+            const btnLogin = document.getElementById("tab-login-btn");
+            const btnReg = document.getElementById("tab-register-btn");
+
+            if (tab === "login") {
+                loginForm.classList.remove("hidden");
+                regForm.classList.add("hidden");
+                btnLogin.className = "py-2.5 rounded-xl text-sm font-bold bg-indigo-600 text-white shadow-lg transition";
+                btnReg.className = "py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition";
+            } else {
+                loginForm.classList.add("hidden");
+                regForm.classList.remove("hidden");
+                btnReg.className = "py-2.5 rounded-xl text-sm font-bold bg-emerald-600 text-white shadow-lg transition";
+                btnLogin.className = "py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition";
+            }
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById("reg-name").value.trim();
+            const phone = document.getElementById("reg-phone").value.trim();
+            const pass = document.getElementById("reg-pass").value;
+            const confirmPass = document.getElementById("reg-confirm-pass").value;
+
+            if (phone.length < 11) {
+                showToast("সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন", "error");
+                return;
+            }
+            if (db.users.some(u => u.phone === phone)) {
+                showToast("এই নম্বর দিয়ে ইতিমধ্যে রেজিস্টার্ড করা আছে! অন্য নম্বর ব্যবহার করুন বা লগইন করুন।", "error");
+                return;
+            }
+            if (pass !== confirmPass) {
+                showToast("পাসওয়ার্ড এবং কনফার্ম পাসওয়ার্ড মিলছে না!", "error");
+                return;
+            }
+
+            const newUser = {
+                name,
+                phone,
+                password: pass,
+                balance: 0,
+                commission: 0,
+                commissionRate: 2.5,
+                gateways: [],
+                inbox: [],
+                kycStatus: "Unverified",
+                kycData: null,
+                banned: false
+            };
+
+            db.users.push(newUser);
+            db.currentUserPhone = phone;
+            saveDB();
+
+            e.target.reset();
+            checkSessionAndRender();
+            showToast("NovaPay অ্যাকাউন্ট তৈরি এবং লগইন সফল হয়েছে!", "success");
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const phone = document.getElementById("login-phone").value.trim();
+            const pass = document.getElementById("login-pass").value;
+
+            const foundUser = db.users.find(u => u.phone === phone && u.password === pass);
+            if (!foundUser) {
+                showToast("ভুল মোবাইল নম্বর অথবা পাসওয়ার্ড! আগে রেজিস্টার করুন।", "error");
+                return;
+            }
+            if (foundUser.banned) {
+                showToast("আপনার অ্যাকাউন্টটি অ্যাডমিন কর্তৃক ব্যান (Suspended) করা হয়েছে!", "error");
+                return;
+            }
+
+            if (!Array.isArray(foundUser.inbox)) foundUser.inbox = [];
+            db.currentUserPhone = foundUser.phone;
+            saveDB();
+            checkSessionAndRender();
+            showToast("স্বাগতম, " + foundUser.name, "success");
+        }
+
+        function handleLogout() {
+            db.currentUserPhone = null;
+            saveDB();
+            checkSessionAndRender();
+            showToast("আপনি সফলভাবে লগ আউট করেছেন", "info");
+        }
+
+        function checkSessionAndRender() {
+            const user = getCurrentUser();
+            if (user && !user.banned) {
+                document.getElementById("auth-screen").classList.add("hidden");
+                document.getElementById("main-app-view").classList.remove("hidden");
+                document.getElementById("bottom-nav").classList.remove("hidden");
+                syncUserUI();
+            } else {
+                if (user && user.banned) {
+                    db.currentUserPhone = null;
+                    saveDB();
+                }
+                document.getElementById("main-app-view").classList.add("hidden");
+                document.getElementById("bottom-nav").classList.add("hidden");
+                document.getElementById("auth-screen").classList.remove("hidden");
+            }
+        }
+
+        // =====================================================================
+        // USER DASHBOARD & NAVIGATION
+        // =====================================================================
+        function switchUserTab(tabName) {
+            const tabs = ["home", "requests", "gateways", "commission", "settings"];
+            tabs.forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add("hidden");
+                document.getElementById(`nav-${t}`).className = "nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400 hover:text-white transition";
+            });
+            document.getElementById(`tab-${tabName}`).classList.remove("hidden");
+            document.getElementById(`nav-${tabName}`).className = "nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-indigo-400 bg-indigo-500/15 transition";
+        }
+
+        function openRequestTab() {
+            switchUserTab("requests");
+            syncUserUI();
+        }
+
+        // =====================================================================
+        // TOP UP BALANCE MODAL (BINANCE USDT BEP20 + BKASH / NAGAD / ROCKET / UPAY)
+        // =====================================================================
+        function openTopUpModal() {
+            document.getElementById("user-view-bkash-num").textContent = db.paymentSettings.bkash || "01356408019";
+            document.getElementById("user-view-nagad-num").textContent = db.paymentSettings.nagad;
+            document.getElementById("user-view-rocket-num").textContent = db.paymentSettings.rocket;
+            document.getElementById("user-view-upay-num").textContent = db.paymentSettings.upay;
+            document.getElementById("user-view-bep20-addr").textContent = db.paymentSettings.bep20Address;
+
+            const qrContainer = document.getElementById("bep20-qr-box");
+            qrContainer.innerHTML = "";
+            new QRCode(qrContainer, {
+                text: db.paymentSettings.bep20Address,
+                width: 145,
+                height: 145,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            document.getElementById("topup-modal").classList.remove("hidden");
+        }
+
+        function closeTopUpModal() {
+            document.getElementById("topup-modal").classList.add("hidden");
+        }
+
+        function switchTopUpTab(tab) {
+            const binPanel = document.getElementById("topup-panel-binance");
+            const mobPanel = document.getElementById("topup-panel-mobile");
+            const binBtn = document.getElementById("topup-tab-binance");
+            const mobBtn = document.getElementById("topup-tab-mobile");
+
+            if (tab === "binance") {
+                binPanel.classList.remove("hidden");
+                mobPanel.classList.add("hidden");
+                binBtn.className = "py-2.5 px-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 shadow transition flex items-center justify-center gap-1.5";
+                mobBtn.className = "py-2.5 px-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5";
+            } else {
+                binPanel.classList.add("hidden");
+                mobPanel.classList.remove("hidden");
+                mobBtn.className = "py-2.5 px-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow transition flex items-center justify-center gap-1.5";
+                binBtn.className = "py-2.5 px-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5";
+            }
+        }
+
+        function submitTopUpRequest(e, sourceType) {
+            e.preventDefault();
+            const user = getCurrentUser();
+            if (!user) return;
+
+            let amount = 0;
+            let trxId = "";
+            let methodLabel = "";
+            let senderInfo = "";
+            let unitLabel = "৳";
+
+            if (sourceType === "Binance (BEP20)") {
+                amount = parseFloat(document.getElementById("topup-bin-amount").value);
+                if (isNaN(amount) || amount < 50) {
+                    showToast("Binance-এ মিনিমাম 50 USDT ডিপোজিট করতে হবে!", "error");
+                    return;
+                }
+                trxId = document.getElementById("topup-bin-trx").value.trim();
+                methodLabel = "Binance USDT (BEP20)";
+                senderInfo = "BEP20 Network";
+                unitLabel = "USDT ";
+            } else {
+                amount = parseFloat(document.getElementById("topup-mob-amount").value);
+                trxId = document.getElementById("topup-mob-trx").value.trim();
+                methodLabel = document.getElementById("topup-mob-method").value;
+                senderInfo = "Sender: " + document.getElementById("topup-mob-sender").value.trim();
+                unitLabel = "৳";
+            }
+
+            db.requests.unshift({
+                id: Date.now(),
+                userPhone: user.phone,
+                userName: user.name,
+                category: "TopUp",
+                type: "Top-Up",
+                methodOrPlatform: methodLabel,
+                gamingId: "-",
+                gatewayOrSender: senderInfo,
+                amount: amount,
+                unit: unitLabel,
+                trxId: trxId,
+                status: "Pending",
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+
+            saveDB();
+            e.target.reset();
+            closeTopUpModal();
+            syncUserUI();
+            showToast("Top-Up রিকোয়েস্ট অ্যাডমিন প্যানেলে পাঠানো হয়েছে!", "success");
+        }
+
+        // =====================================================================
+        // 20 PLATFORMS SLIDER & LIVE MASKED DEMO TRANSACTIONS
+        // =====================================================================
+        function initPlatformsSlider() {
+            const track = document.getElementById("platforms-marquee-track");
+            if (!track) return;
+
+            const loopItems = [...PLATFORMS_20, ...PLATFORMS_20];
+            track.innerHTML = loopItems.map(p => `
+                <button type="button" onclick="openTopUpModal()" 
+                    class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-950/90 hover:bg-slate-800 border border-slate-700/80 shadow-md transition shrink-0">
+                    <div class="w-7 h-7 rounded-lg bg-gradient-to-br ${p.color} flex items-center justify-center text-white text-xs shadow">
+                        <i class="fa-solid ${p.icon}"></i>
+                    </div>
+                    <span class="text-xs font-bold text-white whitespace-nowrap">${p.name}</span>
+                </button>
+            `).join("");
+        }
+
+        function maskGamingId(id) {
+            if (!id || id.length < 4) return "Us***99";
+            return `${id.slice(0, 2)}***${id.slice(-2)}`;
+        }
+
+        function generateDemoTransaction() {
+            const prefixes = ["Pl", "Mc", "Kh", "Ba", "Cr", "Je", "Na", "Ro", "Ki", "St", "Pr", "Go"];
+            const rawId = `${prefixes[Math.floor(Math.random() * prefixes.length)]}${Math.floor(1000 + Math.random() * 9000)}`;
+            const maskedId = maskGamingId(rawId);
+            const platform = PLATFORMS_20[Math.floor(Math.random() * PLATFORMS_20.length)].name;
+            const gateways = ["bKash", "Nagad", "Rocket", "Upay"];
+            const gateway = gateways[Math.floor(Math.random() * gateways.length)];
+            const isDeposit = Math.random() > 0.42;
+            const amounts = [500, 1000, 1500, 2000, 3000, 5000, 10000, 20000];
+            const amount = amounts[Math.floor(Math.random() * amounts.length)];
+
+            liveDemoFeed.unshift({
+                type: isDeposit ? "Deposit" : "Withdraw",
+                maskedId,
+                platform,
+                gateway,
+                amount,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+            if (liveDemoFeed.length > 15) liveDemoFeed.pop();
+
+            const container = document.getElementById("live-feed-list");
+            if (!container) return;
+            container.innerHTML = liveDemoFeed.map((item, idx) => {
+                const isDep = item.type === "Deposit";
+                return `
+                    <div class="${idx === 0 ? 'tx-item-new' : ''} flex items-center justify-between p-2.5 rounded-2xl bg-slate-950/75 border border-slate-800/90">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl ${isDep ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30'} border flex items-center justify-center text-xs">
+                                <i class="fa-solid ${isDep ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-bold text-white font-mono">${item.maskedId}</span>
+                                    <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-cyan-300">${item.platform}</span>
+                                </div>
+                                <p class="text-[10px] text-slate-400">${item.gateway} • ${item.time}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-extrabold ${isDep ? 'text-emerald-400' : 'text-amber-400'}">
+                                ${isDep ? '+' : '-'} ৳${item.amount.toLocaleString()}
+                            </p>
+                            <span class="text-[9px] uppercase font-bold ${isDep ? 'text-emerald-500' : 'text-indigo-400'}">${item.type}</span>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        // =====================================================================
+        // GATEWAYS MANAGEMENT
+        // =====================================================================
+        function addUserGateway(e) {
+            e.preventDefault();
+            const user = getCurrentUser();
+            if (!user) return;
+
+            const provider = document.getElementById("gw-provider").value;
+            const type = document.getElementById("gw-type").value;
+            const number = document.getElementById("gw-number").value.trim();
+
+            if (number.length < 11) {
+                showToast("সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন", "error");
+                return;
+            }
+
+            user.gateways.unshift({
+                id: Date.now(),
+                provider,
+                type,
+                number,
+                status: "Active"
+            });
+
+            saveDB();
+            document.getElementById("gw-number").value = "";
+            syncUserUI();
+            showToast(`${provider} নম্বর যুক্ত হয়েছে এবং Active আছে!`, "success");
+        }
+
+        // =====================================================================
+        // SETTINGS & KYC
+        // =====================================================================
+        function toggleSettingsBox(id) {
+            document.getElementById(id).classList.toggle("hidden");
+        }
+
+        let kycFrontBase64 = "";
+        let kycBackBase64 = "";
+
+        function previewKYCImage(event, side) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (side === "front") {
+                    kycFrontBase64 = e.target.result;
+                    document.getElementById("preview-nid-front").src = kycFrontBase64;
+                    document.getElementById("preview-nid-front").classList.remove("hidden");
+                    document.getElementById("placeholder-nid-front").classList.add("hidden");
+                } else {
+                    kycBackBase64 = e.target.result;
+                    document.getElementById("preview-nid-back").src = kycBackBase64;
+                    document.getElementById("preview-nid-back").classList.remove("hidden");
+                    document.getElementById("placeholder-nid-back").classList.add("hidden");
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function submitKYC(e) {
+            e.preventDefault();
+            const user = getCurrentUser();
+            if (!user) return;
+
+            const nidName = document.getElementById("kyc-nid-name").value.trim();
+            const nidNumber = document.getElementById("kyc-nid-number").value.trim();
+
+            if (!kycFrontBase64 || !kycBackBase64) {
+                showToast("এনআইডি কার্ডের সামনের এবং পিছনের ছবি দিন", "error");
+                return;
+            }
+
+            user.kycStatus = "Pending";
+            user.kycData = {
+                nidName,
+                nidNumber,
+                frontImg: kycFrontBase64,
+                backImg: kycBackBase64
+            };
+
+            saveDB();
+            syncUserUI();
+            showToast("KYC ডকুমেন্ট অ্যাডমিনের কাছে পাঠানো হয়েছে!", "success");
+        }
+
+        function handleChangeNumber(e) {
+            e.preventDefault();
+            const user = getCurrentUser();
+            if (!user) return;
+
+            const newPhone = document.getElementById("new-phone-input").value.trim();
+            if (newPhone.length < 11) {
+                showToast("সঠিক ১১ ডিজিটের নম্বর দিন", "error");
+                return;
+            }
+            if (db.users.some(u => u.phone === newPhone && u.phone !== user.phone)) {
+                showToast("এই নম্বরটি ইতিমধ্যে ব্যবহৃত হচ্ছে!", "error");
+                return;
+            }
+
+            db.requests.forEach(r => {
+                if (r.userPhone === user.phone) r.userPhone = newPhone;
+            });
+
+            user.phone = newPhone;
+            db.currentUserPhone = newPhone;
+            saveDB();
+
+            document.getElementById("new-phone-input").value = "";
+            syncUserUI();
+            showToast("মোবাইল নম্বর সফলভাবে আপডেট হয়েছে!", "success");
+        }
+
+        function handleChangePassword(e) {
+            e.preventDefault();
+            const user = getCurrentUser();
+            if (!user) return;
+
+            const oldPass = document.getElementById("old-pass-input").value;
+            const newPass = document.getElementById("new-pass-input").value;
+            if (oldPass !== user.password) {
+                showToast("বর্তমান পাসওয়ার্ড সঠিক নয়!", "error");
+                return;
+            }
+            user.password = newPass;
+            saveDB();
+            e.target.reset();
+            showToast("পাসওয়ার্ড পরিবর্তন সফল হয়েছে!", "success");
+        }
+
+        // =====================================================================
+        // SYNC USER UI
+        // =====================================================================
+        function syncUserUI() {
+            const user = getCurrentUser();
+            if (!user) return;
+
+            if (!Array.isArray(user.inbox)) user.inbox = [];
+
+            document.getElementById("header-user-info").textContent = `${user.name} • ${user.phone}`;
+            document.getElementById("display-balance").textContent = user.balance.toLocaleString("en-US", { minimumFractionDigits: 2 });
+            document.getElementById("display-commission").textContent = user.commission.toLocaleString("en-US", { minimumFractionDigits: 2 });
+            document.getElementById("comm-total-display").textContent = user.commission.toLocaleString("en-US", { minimumFractionDigits: 2 });
+            document.getElementById("display-active-gateways").textContent = user.gateways.length;
+            document.getElementById("gw-count-badge").textContent = `${user.gateways.length} Active`;
+
+            // Inbox Unread Badge
+            const unreadCount = user.inbox.filter(m => m.unread).length;
+            const inboxBadge = document.getElementById("inbox-unread-badge");
+            if (unreadCount > 0) {
+                inboxBadge.textContent = unreadCount;
+                inboxBadge.classList.remove("hidden");
+            } else {
+                inboxBadge.classList.add("hidden");
+            }
+
+            // KYC Badge
+            const kycBadge = document.getElementById("header-kyc-badge");
+            const settingsKyc = document.getElementById("settings-kyc-status");
+            kycBadge.textContent = user.kycStatus;
+            settingsKyc.textContent = `KYC: ${user.kycStatus}`;
+            if (user.kycStatus === "Verified") {
+                kycBadge.className = "text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold";
+            } else if (user.kycStatus === "Rejected") {
+                kycBadge.className = "text-[9px] px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold";
+            } else {
+                kycBadge.className = "text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold";
+            }
+
+            // Render Gateways
+            const gwList = document.getElementById("gateways-list");
+            if (user.gateways.length === 0) {
+                gwList.innerHTML = `<div class="p-6 text-center rounded-2xl bg-slate-950/60 border border-slate-800 text-xs text-slate-400">কোনো গেটওয়ে নম্বর এড করা নেই। উপরে ফর্ম থেকে নম্বর যোগ করুন।</div>`;
+            } else {
+                const providerColors = {
+                    bKash: "from-pink-600 to-rose-700",
+                    Nagad: "from-orange-500 to-red-600",
+                    Rocket: "from-purple-600 to-indigo-700",
+                    Upay: "from-amber-500 to-yellow-600"
+                };
+                gwList.innerHTML = user.gateways.map(gw => `
+                    <div class="card-3d rounded-2xl p-3.5 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br ${providerColors[gw.provider] || 'from-blue-600 to-indigo-700'} flex items-center justify-center text-white font-extrabold text-xs shadow">
+                                ${gw.provider.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="text-sm font-bold text-white">${gw.provider}</h4>
+                                    <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300">${gw.type}</span>
+                                </div>
+                                <p class="text-xs font-mono text-cyan-300 mt-0.5">${gw.number}</p>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Active
+                        </span>
+                    </div>
+                `).join("");
+            }
+
+            // Render User Transaction History Only
+            const myRequests = db.requests.filter(r => r.userPhone === user.phone);
+            const reqHistoryEl = document.getElementById("user-requests-history");
+            if (myRequests.length === 0) {
+                reqHistoryEl.innerHTML = `<div class="p-6 text-center rounded-2xl bg-slate-950/60 border border-slate-800 text-xs text-slate-400">আপনার কোন লেনদেন হিস্ট্রি নেই</div>`;
+            } else {
+                reqHistoryEl.innerHTML = myRequests.map(req => {
+                    const statusLabel = req.status === "Approved"
+                        ? "Approved"
+                        : req.status === "Rejected"
+                        ? "রিজেক্ট"
+                        : "Pending";
+                    const statusBadge = req.status === "Approved"
+                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                        : req.status === "Rejected"
+                        ? "bg-rose-500/20 text-rose-400 border-rose-500/40"
+                        : "bg-amber-500/20 text-amber-300 border-amber-500/40";
+                    const unit = req.unit || "৳";
+                    return `
+                        <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs">
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-bold ${req.type === 'Top-Up' ? 'text-amber-400' : req.type === 'Deposit' ? 'text-emerald-400' : 'text-cyan-400'}">${req.type}</span>
+                                    <span class="text-slate-300">• ${req.methodOrPlatform}</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400 mt-0.5">${req.gatewayOrSender} • Trx: ${req.trxId} • ${req.time || ''}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-white">${unit}${req.amount.toLocaleString()}</p>
+                                <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusBadge}">${statusLabel}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            }
+        }
+
+        // =====================================================================
+        // MASTER ADMIN PANEL RENDER & MANUAL ACTIONS
+        // =====================================================================
+        function renderAdminPanel() {
+            document.getElementById("admin-cfg-bkash").value = db.paymentSettings.bkash || "01356408019";
+            document.getElementById("admin-cfg-nagad").value = db.paymentSettings.nagad;
+            document.getElementById("admin-cfg-rocket").value = db.paymentSettings.rocket;
+            document.getElementById("admin-cfg-upay").value = db.paymentSettings.upay;
+            document.getElementById("admin-cfg-bep20").value = db.paymentSettings.bep20Address;
+
+            document.getElementById("admin-total-users").textContent = db.users.length;
+            document.getElementById("admin-pending-reqs").textContent = db.requests.filter(r => r.status === "Pending").length;
+            document.getElementById("admin-approved-reqs").textContent = db.requests.filter(r => r.status === "Approved").length;
+            document.getElementById("admin-pending-kyc").textContent = db.users.filter(u => u.kycStatus === "Pending").length;
+
+            // 1. Render All Requests
+            const reqListEl = document.getElementById("admin-requests-list");
+            if (db.requests.length === 0) {
+                reqListEl.innerHTML = `<p class="text-center text-xs text-slate-400 py-6">এখনো কোনো রিকোয়েস্ট আসেনি।</p>`;
+            } else {
+                reqListEl.innerHTML = db.requests.map(req => {
+                    const unit = req.unit || "৳";
+                    return `
+                        <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="space-y-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded text-xs font-bold ${req.type === 'Top-Up' ? 'bg-amber-500/20 text-amber-300' : req.type === 'Deposit' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-400'}">
+                                        ${req.type}
+                                    </span>
+                                    <span class="text-sm font-bold text-white">${req.methodOrPlatform}</span>
+                                    <span class="text-xs text-cyan-300">(${req.userName} - ${req.userPhone})</span>
+                                </div>
+                                <p class="text-xs text-slate-300">${req.gatewayOrSender} • TrxID: <span class="font-mono text-amber-300">${req.trxId}</span></p>
+                                <p class="text-sm font-extrabold text-white">পরিমাণ: ${unit}${req.amount.toLocaleString()}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                ${req.status === "Pending" ? `
+                                    <button onclick="adminDecideRequest(${req.id}, 'Approved')" class="btn-3d btn-3d-emerald px-3.5 py-2 rounded-xl text-xs font-bold text-white">
+                                        <i class="fa-solid fa-check mr-1"></i> Approve
+                                    </button>
+                                    <button onclick="adminDecideRequest(${req.id}, 'Rejected')" class="btn-3d btn-3d-rose px-3.5 py-2 rounded-xl text-xs font-bold text-white">
+                                        <i class="fa-solid fa-xmark mr-1"></i> Reject
+                                    </button>
+                                ` : `
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold border ${req.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' : 'bg-rose-500/20 text-rose-400 border-rose-500/40'}">
+                                        ${req.status}
+                                    </span>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            }
+
+            // 2. Render All Registered Users
+            const usersListEl = document.getElementById("admin-users-list");
+            if (db.users.length === 0) {
+                usersListEl.innerHTML = `<p class="text-center text-xs text-slate-400 py-6">কোনো ইউজার রেজিস্ট্রেশন করেনি।</p>`;
+            } else {
+                usersListEl.innerHTML = db.users.map((u, index) => `
+                    <div class="p-4 rounded-2xl bg-slate-900/90 border ${u.banned ? 'border-rose-500/50' : 'border-slate-800'} space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="text-sm font-bold text-white">${u.name}</h4>
+                                    <span class="text-xs font-mono text-cyan-300">${u.phone}</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${u.banned ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'}">
+                                        ${u.banned ? 'Banned' : 'Active'}
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-300 mt-1">
+                                    ব্যালেন্স: <span class="font-bold text-emerald-400">৳${u.balance.toLocaleString()}</span> • 
+                                    কমিশন: <span class="font-bold text-amber-400">৳${u.commission.toLocaleString()}</span> • 
+                                    গেটওয়ে: <span class="text-cyan-300">${u.gateways.length} টি</span>
+                                </p>
+                            </div>
+                            <button onclick="adminToggleBanUser('${u.phone}')" class="btn-3d ${u.banned ? 'btn-3d-emerald' : 'btn-3d-rose'} px-3 py-1.5 rounded-xl text-xs font-bold text-white">
+                                ${u.banned ? 'Unban User' : 'Ban User'}
+                            </button>
+                        </div>
+
+                        <!-- Admin Manual Balance & Commission Update Form -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-800">
+                            <input type="number" id="admin-bal-input-${index}" placeholder="নতুন ব্যালেন্স লিখুন (৳)"
+                                class="px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none">
+                            <input type="number" id="admin-comm-input-${index}" placeholder="নতুন কমিশন লিখুন (৳)"
+                                class="px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none">
+                            <button onclick="adminUpdateUserWallet('${u.phone}', ${index})" class="btn-3d btn-3d-blue py-2 px-3 rounded-xl text-xs font-bold text-white">
+                                ব্যালেন্স আপডেট করুন
+                            </button>
+                        </div>
+                    </div>
+                `).join("");
+            }
+
+            // 3. Render KYC Submissions
+            const kycListEl = document.getElementById("admin-kyc-list");
+            const kycUsers = db.users.filter(u => u.kycData !== null);
+            if (kycUsers.length === 0) {
+                kycListEl.innerHTML = `<p class="text-center text-xs text-slate-400 py-4">কোনো KYC ডকুমেন্ট জমা হয়নি।</p>`;
+            } else {
+                kycListEl.innerHTML = kycUsers.map(u => `
+                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-bold text-white">${u.kycData.nidName} <span class="text-xs text-slate-400">(${u.phone})</span></p>
+                                <p class="text-xs font-mono text-cyan-300">NID: ${u.kycData.nidNumber}</p>
+                            </div>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${u.kycStatus === 'Verified' ? 'bg-emerald-500/20 text-emerald-400' : u.kycStatus === 'Rejected' ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-300'}">
+                                ${u.kycStatus}
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <img src="${u.kycData.frontImg}" class="w-full h-32 object-cover rounded-xl border border-slate-700" alt="NID Front">
+                            <img src="${u.kycData.backImg}" class="w-full h-32 object-cover rounded-xl border border-slate-700" alt="NID Back">
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="adminDecideKYC('${u.phone}', 'Verified')" class="btn-3d btn-3d-emerald px-4 py-2 rounded-xl text-xs font-bold text-white">Approve KYC</button>
+                            <button onclick="adminDecideKYC('${u.phone}', 'Rejected')" class="btn-3d btn-3d-rose px-4 py-2 rounded-xl text-xs font-bold text-white">Reject KYC</button>
+                        </div>
+                    </div>
+                `).join("");
+            }
+        }
+
+        function adminDecideRequest(reqId, decision) {
+            const req = db.requests.find(r => r.id === reqId);
+            if (!req || req.status !== "Pending") return;
+
+            req.status = decision;
+            const user = db.users.find(u => u.phone === req.userPhone);
+
+            if (decision === "Approved" && user) {
+                if (req.type === "Top-Up" || req.type === "Deposit") {
+                    user.balance += req.amount;
+                    const formattedAdded = formatAmountPlain(req.amount);
+                    const formattedTotal = formatAmountPlain(user.balance);
+                    sendInboxMessage(
+                        user,
+                        "ব্যালেন্স যুক্ত হয়েছে",
+                        `Dear ${user.name}, Congratulations, your balance of ${formattedAdded} taka has been added. Current Balance: ${formattedTotal} taka.`,
+                        "balance"
+                    );
+                } else if (req.type === "Withdraw") {
+                    user.balance = Math.max(0, user.balance - req.amount);
+                }
+            }
+
+            saveDB();
+            renderAdminPanel();
+            showToast(`রিকোয়েস্টটি ${decision} করা হয়েছে!`, decision === "Approved" ? "success" : "info");
+        }
+
+        function adminToggleBanUser(phone) {
+            const user = db.users.find(u => u.phone === phone);
+            if (!user) return;
+            user.banned = !user.banned;
+            saveDB();
+            renderAdminPanel();
+            showToast(`${user.name} কে ${user.banned ? 'Ban' : 'Unban'} করা হয়েছে!`, user.banned ? "error" : "success");
+        }
+
+        function adminUpdateUserWallet(phone, index) {
+            const user = db.users.find(u => u.phone === phone);
+            if (!user) return;
+
+            const newBalVal = document.getElementById(`admin-bal-input-${index}`).value;
+            const newCommVal = document.getElementById(`admin-comm-input-${index}`).value;
+            const prevBalance = Number(user.balance) || 0;
+
+            if (newBalVal !== "") {
+                const updatedBal = parseFloat(newBalVal);
+                const diff = updatedBal - prevBalance;
+                user.balance = updatedBal;
+
+                const addedOrCurrent = diff > 0 ? formatAmountPlain(diff) : formatAmountPlain(updatedBal);
+                const currentBalText = formatAmountPlain(updatedBal);
+                sendInboxMessage(
+                    user,
+                    "ব্যালেন্স আপডেট নোটিফিকেশন",
+                    `Dear ${user.name}, Congratulations, your balance of ${addedOrCurrent} taka has been added. Current Balance: ${currentBalText} taka.`,
+                    "balance"
+                );
+            }
+
+            if (newCommVal !== "") {
+                user.commission = parseFloat(newCommVal);
+            }
+
+            saveDB();
+            renderAdminPanel();
+            showToast(`${user.name}-এর ব্যালেন্স আপডেট এবং ইনবক্স মেসেজ পাঠানো হয়েছে!`, "success");
+        }
+
+        function adminDecideKYC(phone, status) {
+            const user = db.users.find(u => u.phone === phone);
+            if (!user) return;
+            user.kycStatus = status;
+
+            if (status === "Verified") {
+                const currentBalText = formatAmountPlain(user.balance);
+                sendInboxMessage(
+                    user,
+                    "KYC ভেরিফিকেশন সম্পন্ন",
+                    `Dear ${user.name}, Congratulations! Your KYC verification is complete. Current Balance: ${currentBalText} taka.`,
+                    "kyc"
+                );
+            } else if (status === "Rejected") {
+                const currentBalText = formatAmountPlain(user.balance);
+                sendInboxMessage(
+                    user,
+                    "KYC ভেরিফিকেশন আপডেট",
+                    `Dear ${user.name}, your KYC request was rejected. Please submit valid NID information again. Current Balance: ${currentBalText} taka.`,
+                    "kyc"
+                );
+            }
+
+            saveDB();
+            renderAdminPanel();
+            showToast(`KYC স্ট্যাটাস ${status} করা হয়েছে!`, "success");
+        }
+
+        function adminSavePaymentSettings(e) {
+            e.preventDefault();
+            db.paymentSettings.bkash = document.getElementById("admin-cfg-bkash").value.trim();
+            db.paymentSettings.nagad = document.getElementById("admin-cfg-nagad").value.trim();
+            db.paymentSettings.rocket = document.getElementById("admin-cfg-rocket").value.trim();
+            db.paymentSettings.upay = document.getElementById("admin-cfg-upay").value.trim();
+            db.paymentSettings.bep20Address = document.getElementById("admin-cfg-bep20").value.trim();
+
+            saveDB();
+            showToast("নতুন পেমেন্ট নম্বর ও Binance এড্রেস আপডেট হয়েছে!", "success");
+        }
+
+        function adminUpdatePin(e) {
+            e.preventDefault();
+            const newPin = document.getElementById("admin-new-pin").value.trim();
+            if (newPin.length < 4) {
+                showToast("কমপক্ষে ৪ অক্ষরের অ্যাডমিন পাসওয়ার্ড দিন", "error");
+                return;
+            }
+            db.adminPin = newPin;
+            saveDB();
+            e.target.reset();
+            showToast("অ্যাডমিন পাসওয়ার্ড পরিবর্তন হয়েছে!", "success");
+        }
+
+        // Initialize on Window Load
+        window.onload = function () {
+            initPlatformsSlider();
+            for (let i = 0; i < 5; i++) {
+                generateDemoTransaction();
+            }
+            setInterval(generateDemoTransaction, 60000);
+            checkSessionAndRender();
+            initFirebaseSync();
+        };
+    </script>
+</body>
+</html>
